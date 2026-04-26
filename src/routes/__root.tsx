@@ -1,13 +1,23 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
-
+import {
+  Outlet,
+  Link,
+  createRootRoute,
+  HeadContent,
+  Scripts,
+} from "@tanstack/react-router";
+import { useState } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import appCss from "../styles.css?url";
+import { BottomNav } from "@/components/bottom-nav";
 
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">
+          Page not found
+        </h2>
         <p className="mt-2 text-sm text-muted-foreground">
           The page you're looking for doesn't exist or has been moved.
         </p>
@@ -30,18 +40,17 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Curbside Dashboard" },
-      { name: "description", content: "Curbside Dashboard" },
-      { name: "author", content: "Curbside Dashboard" },
+      { name: "description", content: "Real estate lead capture dashboard" },
+      { name: "theme-color", content: "#2563eb" },
       { property: "og:title", content: "Curbside Dashboard" },
-      { property: "og:description", content: "Curbside Dashboard" },
+      { property: "og:description", content: "Real estate lead capture dashboard" },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
+      { rel: "stylesheet", href: appCss },
       {
         rel: "stylesheet",
-        href: appCss,
+        href: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
       },
     ],
   }),
@@ -65,5 +74,24 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  return <Outlet />;
+  const [qc] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 30_000,
+            refetchOnWindowFocus: false,
+            retry: 1,
+          },
+        },
+      }),
+  );
+  return (
+    <QueryClientProvider client={qc}>
+      <div className="mx-auto min-h-screen max-w-2xl bg-background pb-20">
+        <Outlet />
+      </div>
+      <BottomNav />
+    </QueryClientProvider>
+  );
 }
