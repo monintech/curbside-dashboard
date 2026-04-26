@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronDown, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Lead, OwnerContact, AuditLogEntry, EnrichmentJob, TaxHistoryEntry, LienEntry } from "@/integrations/supabase/types";
 import { ScoreBadge } from "@/components/score-badge";
+import { LeadMiniMap } from "@/components/lead-mini-map";
 import { fmtCurrency, fmtAddress, angleLabel, fmtRelativeDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -122,7 +123,7 @@ function LeadDetailPage() {
         {/* Map */}
         {l.latitude != null && l.longitude != null ? (
           <Card title="Location">
-            <LeadMap lat={Number(l.latitude)} lng={Number(l.longitude)} />
+            <LeadMiniMap lat={Number(l.latitude)} lng={Number(l.longitude)} />
           </Card>
         ) : null}
 
@@ -354,29 +355,3 @@ function Collapsible({ title, children }: { title: string; children: React.React
   );
 }
 
-function LeadMap({ lat, lng }: { lat: number; lng: number }) {
-  // Lazy-import react-leaflet (SSR-safe — module-level imports would break on server render)
-  if (typeof window === "undefined") return null;
-  const { MapContainer, TileLayer, Marker, Popup } = require("react-leaflet") as typeof import("react-leaflet");
-  return (
-    <div className="overflow-hidden rounded-xl">
-      <MapContainer
-        center={[lat, lng]}
-        zoom={16}
-        scrollWheelZoom={false}
-        className="h-56 w-full"
-        style={{ height: 224, width: "100%" }}
-      >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        />
-        <Marker position={[lat, lng]}>
-          <Popup>
-            {lat.toFixed(5)}, {lng.toFixed(5)}
-          </Popup>
-        </Marker>
-      </MapContainer>
-    </div>
-  );
-}
