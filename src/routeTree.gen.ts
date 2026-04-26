@@ -9,38 +9,98 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as MapRouteImport } from './routes/map'
+import { Route as LeadsRouteImport } from './routes/leads'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LeadsIdRouteImport } from './routes/leads.$id'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapRoute = MapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeadsRoute = LeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LeadsIdRoute = LeadsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => LeadsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/leads': typeof LeadsRouteWithChildren
+  '/map': typeof MapRoute
+  '/settings': typeof SettingsRoute
+  '/leads/$id': typeof LeadsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/leads': typeof LeadsRouteWithChildren
+  '/map': typeof MapRoute
+  '/settings': typeof SettingsRoute
+  '/leads/$id': typeof LeadsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/leads': typeof LeadsRouteWithChildren
+  '/map': typeof MapRoute
+  '/settings': typeof SettingsRoute
+  '/leads/$id': typeof LeadsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/leads' | '/map' | '/settings' | '/leads/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/leads' | '/map' | '/settings' | '/leads/$id'
+  id: '__root__' | '/' | '/leads' | '/map' | '/settings' | '/leads/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LeadsRoute: typeof LeadsRouteWithChildren
+  MapRoute: typeof MapRoute
+  SettingsRoute: typeof SettingsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/map': {
+      id: '/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof MapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leads': {
+      id: '/leads'
+      path: '/leads'
+      fullPath: '/leads'
+      preLoaderRoute: typeof LeadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +108,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/leads/$id': {
+      id: '/leads/$id'
+      path: '/$id'
+      fullPath: '/leads/$id'
+      preLoaderRoute: typeof LeadsIdRouteImport
+      parentRoute: typeof LeadsRoute
+    }
   }
 }
 
+interface LeadsRouteChildren {
+  LeadsIdRoute: typeof LeadsIdRoute
+}
+
+const LeadsRouteChildren: LeadsRouteChildren = {
+  LeadsIdRoute: LeadsIdRoute,
+}
+
+const LeadsRouteWithChildren = LeadsRoute._addFileChildren(LeadsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LeadsRoute: LeadsRouteWithChildren,
+  MapRoute: MapRoute,
+  SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
