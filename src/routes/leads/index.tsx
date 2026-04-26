@@ -13,7 +13,7 @@ import { ScoreBadge } from "@/components/score-badge";
 import { fmtCurrency, fmtAddress } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/leads")({
+export const Route = createFileRoute("/leads/")({
   component: LeadsListPage,
 });
 
