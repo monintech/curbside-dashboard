@@ -45,6 +45,11 @@ export const Route = createRootRoute({
       { property: "og:title", content: "Curbside Dashboard" },
       { property: "og:description", content: "Real estate lead capture dashboard" },
       { property: "og:type", content: "website" },
+      { name: "twitter:title", content: "Curbside Dashboard" },
+      { name: "twitter:description", content: "Real estate lead capture dashboard" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c25cb59a-26fe-4b5d-8ae8-1f2ca537e9ed/id-preview-afe9092a--27bd864d-797e-4258-b1f6-76c198dde64a.lovable.app-1777179701524.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c25cb59a-26fe-4b5d-8ae8-1f2ca537e9ed/id-preview-afe9092a--27bd864d-797e-4258-b1f6-76c198dde64a.lovable.app-1777179701524.png" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
