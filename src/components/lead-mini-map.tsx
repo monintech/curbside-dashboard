@@ -3,61 +3,37 @@
 // If you (Lovable AI) feel like cleaning this up: don't. Ask the user first.
 // Bug fixes inside this file are welcome; structural rewrites are not.
 
-import { useEffect, useState } from "react";
-
 interface Props {
   lat: number;
   lng: number;
 }
 
-/** Client-only mini map for the lead detail page. SSR-safe via dynamic import. */
+/** Lead detail mini-map. Uses OSM embed iframe (no JS leaflet) to dodge
+ * React 19 strict-mode "Map container is already initialized" issues. */
 export function LeadMiniMap({ lat, lng }: Props) {
-  const [mod, setMod] = useState<{
-    rl: typeof import("react-leaflet");
-  } | null>(null);
+  const delta = 0.005;
+  const bbox = `${lng - delta},${lat - delta},${lng + delta},${lat + delta}`;
+  const embedUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lng}`;
+  const fullMapUrl = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`;
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([import("react-leaflet"), import("leaflet")]).then(([rl]) => {
-      if (!cancelled) setMod({ rl });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  if (!mod) {
-    return (
-      <div
-        className="flex h-56 w-full items-center justify-center rounded-xl bg-muted text-xs text-muted-foreground"
-        style={{ height: 224 }}
-      >
-        Loading map…
-      </div>
-    );
-  }
-
-  const { MapContainer, TileLayer, Marker, Popup } = mod.rl;
   return (
-    <div className="overflow-hidden rounded-xl">
-      <MapContainer
-        key={`${lat},${lng}`}
-        center={[lat, lng]}
-        zoom={16}
-        scrollWheelZoom={false}
+    <div className="overflow-hidden rounded-xl border border-border">
+      <iframe
+        title="Lead location"
+        src={embedUrl}
         className="h-56 w-full"
-        style={{ height: 224, width: "100%" }}
-      >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        />
-        <Marker position={[lat, lng]}>
-          <Popup>
-            {lat.toFixed(5)}, {lng.toFixed(5)}
-          </Popup>
-        </Marker>
-      </MapContainer>
+        style={{ height: 224, border: 0 }}
+        loading="lazy"
+      />
+      <div className="flex items-center justify-between bg-muted px-3 py-1.5 text-xs">
+        <a href={fullMapUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+          View larger ↗
+        </a>
+        <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+          Open in Google Maps ↗
+        </a>
+      </div>
     </div>
   );
 }
