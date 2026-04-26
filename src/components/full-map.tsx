@@ -64,6 +64,7 @@ export function FullMap({ center, leads }: Props) {
 
   return (
     <MapContainer
+      key={`${center[0]},${center[1]},${leads.length}`}
       center={center}
       zoom={11}
       scrollWheelZoom={true}

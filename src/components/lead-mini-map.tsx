@@ -41,6 +41,7 @@ export function LeadMiniMap({ lat, lng }: Props) {
   return (
     <div className="overflow-hidden rounded-xl">
       <MapContainer
+        key={`${lat},${lng}`}
         center={[lat, lng]}
         zoom={16}
         scrollWheelZoom={false}
