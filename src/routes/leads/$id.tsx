@@ -4,7 +4,7 @@
 // Bug fixes inside this file are welcome; structural rewrites are not.
 
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ChevronLeft, ChevronDown, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -160,23 +160,7 @@ function LeadDetailPage() {
         </Card>
 
         <Card title="Tax status">
-          <div className="mb-2 flex items-center gap-2">
-            {l.tax_delinquent === true ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700">
-                ⚠️ Tax distress flag
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-700">
-                ✓ Taxes current
-              </span>
-            )}
-            {l.years_behind && Number(l.years_behind) > 0 ? (
-              <span className="text-xs text-muted-foreground">{l.years_behind} years behind</span>
-            ) : null}
-            {l.amount_owed && Number(l.amount_owed) > 0 ? (
-              <span className="text-xs text-muted-foreground">{fmtCurrency(l.amount_owed)} owed</span>
-            ) : null}
-          </div>
+          <TaxStatusEditor lead={l} />
 
           {Array.isArray(l.tax_history) && l.tax_history.length ? (
             <TaxHistoryTable rows={l.tax_history} />
@@ -298,6 +282,123 @@ function ContactRow({ c }: { c: OwnerContact }) {
         {note}
       </span>
     </li>
+  );
+}
+
+function TaxStatusEditor({ lead }: { lead: Lead }) {
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [delinquent, setDelinquent] = useState<boolean>(!!lead.tax_delinquent);
+  const [years, setYears] = useState<string>(lead.years_behind?.toString() ?? "");
+  const [owed, setOwed] = useState<string>(lead.amount_owed?.toString() ?? "");
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const patch: Partial<Lead> = {
+        tax_delinquent: delinquent,
+        years_behind: years.trim() === "" ? null : Number(years),
+        amount_owed: owed.trim() === "" ? null : Number(owed),
+      };
+      const { error } = await supabase.from("leads").update(patch).eq("id", lead.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["lead", lead.id] });
+      qc.invalidateQueries({ queryKey: ["leads-list"] });
+      qc.invalidateQueries({ queryKey: ["home-hot-leads"] });
+      setEditing(false);
+    },
+  });
+
+  if (!editing) {
+    return (
+      <div className="mb-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {lead.tax_delinquent === true ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700">
+              ⚠️ Tax distress flag
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-700">
+              ✓ Taxes current
+            </span>
+          )}
+          {lead.years_behind && Number(lead.years_behind) > 0 ? (
+            <span className="text-xs text-muted-foreground">{lead.years_behind} years behind</span>
+          ) : null}
+          {lead.amount_owed && Number(lead.amount_owed) > 0 ? (
+            <span className="text-xs text-muted-foreground">{fmtCurrency(lead.amount_owed)} owed</span>
+          ) : null}
+          <button
+            onClick={() => setEditing(true)}
+            className="ml-auto rounded-md border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+          >
+            ✏️ Edit
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-2 space-y-2 rounded-lg border border-border bg-muted/30 p-3 text-sm">
+      <label className="flex items-center gap-2">
+        <input type="checkbox" checked={delinquent} onChange={(e) => setDelinquent(e.target.checked)} />
+        <span>Tax delinquent</span>
+      </label>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground">Years behind</span>
+          <input
+            type="number"
+            step="0.5"
+            min="0"
+            value={years}
+            onChange={(e) => setYears(e.target.value)}
+            className="rounded border border-border bg-background px-2 py-1"
+            placeholder="2"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground">Amount owed ($)</span>
+          <input
+            type="number"
+            step="1"
+            min="0"
+            value={owed}
+            onChange={(e) => setOwed(e.target.value)}
+            className="rounded border border-border bg-background px-2 py-1"
+            placeholder="8500"
+          />
+        </label>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        After verifying with the county tax assessor, override what BatchData provided. Re-enrichment will overwrite — only update once you trust the data.
+      </p>
+      <div className="flex gap-2">
+        <button
+          onClick={() => save.mutate()}
+          disabled={save.isPending}
+          className="flex-1 rounded-md bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-50"
+        >
+          {save.isPending ? "Saving…" : "Save"}
+        </button>
+        <button
+          onClick={() => {
+            setEditing(false);
+            setDelinquent(!!lead.tax_delinquent);
+            setYears(lead.years_behind?.toString() ?? "");
+            setOwed(lead.amount_owed?.toString() ?? "");
+          }}
+          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium"
+        >
+          Cancel
+        </button>
+      </div>
+      {save.error ? (
+        <p className="text-xs text-red-600">Save failed: {String((save.error as Error).message)}</p>
+      ) : null}
+    </div>
   );
 }
 
